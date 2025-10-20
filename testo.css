@@ -9,14 +9,16 @@ div, img {
 
 #logo {
   opacity:0;
-  width:293px;
-  height:155px;
+  width:300px;
+  height:160px;
   left:50%;
   top:50%;
-  margin-left:-146px;
-  margin-top:-77px;
+  margin-left:-150px;
+  margin-top:-80px;
 }
 
 .flare {
   mix-blend-mode: screen;
+  width: 200px; /* Feste Größe für die Flares */
+  height: 200px;
 }
