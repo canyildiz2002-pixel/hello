@@ -1,0 +1,168 @@
+import React, { useState, useEffect, useRef } from "react"
+import { motion, useAnimation } from "framer-motion"
+import { addPropertyControls, ControlType } from "framer"
+
+/**
+ * Der gesamte CSS-Code wird als JS-Objekt im 'style'-Prop angewendet.
+ * Die 'swipeUp' Keyframe-Animation wird durch Framer Motion ersetzt.
+ */
+const containerStyles: React.CSSProperties = {
+    // Basis-Stile von 'body' und 'greeting' kombiniert
+    height: "100vh",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "black",
+    color: "white",
+    fontFamily: "Arial, sans-serif",
+    fontSize: "5vw",
+    textAlign: "center",
+    overflow: "hidden",
+    // Framer-spezifische Stile für volle Breite/Höhe
+    width: "100%", 
+    padding: 0,
+    margin: 0,
+    boxSizing: "border-box",
+}
+
+export function SwipeGreeting() {
+    // Liste der Wörter (Deine ursprüngliche JS-Array)
+    const greetings = [
+        "Hallo", "Hello", "Bonjour", "Hola", "你好",
+        "مرحبا", "Привет", "Olá", "नमस्ते",
+        "こんにちは", "Merhaba", "안녕하세요",
+        "Hallo" // Letztes Wort für Swipe
+    ]
+
+    // States für das aktuelle Wort und die Sichtbarkeit
+    const [currentText, setCurrentText] = useState("• " + greetings[0])
+    const [index, setIndex] = useState(0)
+    const controls = useAnimation()
+    const isRunningRef = useRef(true)
+
+    // --- LOGIK zur Berechnung der Timings (Dein ursprünglicher JS-Code) ---
+    const calculateDurations = () => {
+        const totalDuration = 2000;
+        const totalWords = greetings.length - 1;
+        const firstRel = 0.6;
+        const secondRel = 0.5;
+        const lastRel = 0.1;
+
+        let relTimes: number[] = [];
+        relTimes.push(firstRel, secondRel);
+        
+        for (let i = 2; i < totalWords; i++) {
+            const ratio = (i - 2) / (totalWords - 3);
+            relTimes.push(secondRel * Math.pow(lastRel / secondRel, ratio));
+        }
+
+        const sumRel = relTimes.reduce((a, b) => a + b, 0);
+        const durations = relTimes.map(t => t / sumRel * totalDuration);
+        durations.push(200); // Dauer für letztes Wort
+        return durations;
+    }
+    
+    // Berechne die Dauern nur einmal
+    const durations = calculateDurations()
+
+    // --- Haupt-Schleife (Umsetzung von 'showNext' mit useEffect) ---
+    useEffect(() => {
+        // Starte die Animation (opacity 1)
+        controls.start({ opacity: 1, y: 0, transition: { duration: 0, delay: 0 } })
+        
+        // Die Funktion, die das nächste Wort zeigt (nach einer Verzögerung)
+        const transitionToNextWord = () => {
+            if (!isRunningRef.current) return
+
+            // 1. Wort ausblenden (transition: opacity 0.1s ease-in-out)
+            controls.start({ opacity: 0, transition: { duration: 0.1, ease: "easeOut" } })
+            
+            // 2. Zustand nach dem Ausblenden ändern (praktisch setTimeout(..., 0))
+            setTimeout(() => {
+                let nextIndex = (index + 1) % greetings.length
+                
+                // Text aktualisieren
+                setCurrentText("• " + greetings[nextIndex])
+                setIndex(nextIndex)
+
+                // 3. Wort einblenden
+                controls.start({ opacity: 1, transition: { duration: 0.1, delay: 0 } })
+
+                // 4. Nächsten Schritt planen
+                const duration = durations[nextIndex]
+                
+                if (nextIndex === greetings.length - 1) {
+                    // Letztes Wort: Starte die Swipe-Animation nach der Wartezeit
+                    setTimeout(() => {
+                        if (isRunningRef.current) {
+                            controls.start({
+                                y: "-150vh", 
+                                opacity: 0, 
+                                transition: { 
+                                    duration: 1.5, // 1.5s Animation
+                                    ease: [0.42, 0, 0.58, 1] // Repräsentiert 'ease-in-out'
+                                }
+                            }).then(() => {
+                                // Animation abgeschlossen, zurücksetzen für den nächsten Loop
+                                setIndex(0)
+                            })
+                        }
+                    }, duration) 
+                } else {
+                    // Normaler Wortwechsel: Starte den nächsten Zyklus
+                    setTimeout(transitionToNextWord, duration)
+                }
+
+            }, 100); // Warte 100ms, bis das Ausblenden fertig ist (opacity transition: 0.1s)
+        }
+
+        // Start der gesamten Schleife nach der ersten Anzeigedauer
+        if (index < greetings.length - 1) {
+            const initialDelay = index === 0 ? durations[0] : durations[index];
+            const timeoutId = setTimeout(transitionToNextWord, initialDelay);
+            return () => clearTimeout(timeoutId); // Cleanup
+        }
+        
+    }, [index, controls]);
+
+
+    // Setze den Index zurück, wenn der Swipe-Zyklus beendet ist (y-Achse ist > 0)
+    useEffect(() => {
+        if (index === 0 && currentText.includes(greetings[0])) {
+            // Setze die y-Position sofort zurück, bevor der nächste Loop startet
+            controls.set({ y: 0, opacity: 0 })
+            
+            // Starte den Loop erneut nach einer kurzen Pause
+            const resetTimeout = setTimeout(() => {
+                if(isRunningRef.current) {
+                    controls.start({ y: 0, opacity: 1, transition: { duration: 0.1 } })
+                    // Starte den eigentlichen Timer für das erste Wort neu
+                    const startTimeout = setTimeout(() => setIndex(0), 100) 
+                    return () => clearTimeout(startTimeout)
+                }
+            }, 500)
+            return () => clearTimeout(resetTimeout)
+        }
+    }, [index, currentText, controls])
+
+
+    // Cleanup für unmount
+    useEffect(() => {
+        return () => { isRunningRef.current = false; };
+    }, []);
+
+
+    return (
+        <div style={containerStyles}>
+            <motion.div
+                id="greeting"
+                // Steuerung über useAnimation Hook
+                animate={controls}
+                // Anfangszustand
+                initial={{ opacity: 0, y: 0 }} 
+            >
+                {currentText}
+            </motion.div>
+        </div>
+    )
+}
