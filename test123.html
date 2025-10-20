@@ -3,168 +3,123 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hallo Sequence - Kontrastwechsel (30vw, Final)</title>
+<title>Logo Wobble Glow Animation</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+
 <style>
-  /* KONTRAST UND KLARHEIT */
   body {
-    margin: 0;
-    height: 100vh;
     display: flex;
-    justify-content: center;
     align-items: center;
-    background-color: black; 
-    overflow: hidden;
-  }
-
-  /* WRAPPER FÜR SWIPE-ANIMATION (enthält alles) */
-  .swipe-wrapper {
-    position: relative; 
-    display: flex; 
     justify-content: center;
-    align-items: center;
-    width: 100%; 
-    height: 100%; 
+    min-height: 100vh;
+    margin: 0;
+    background: #000; /* Schwarzer Hintergrund */
+    font-family: sans-serif;
   }
 
-  /* CONTAINER FÜR DEN KREIS (zentriert hinter dem Text) */
-  .circle-container { 
-    position: absolute;
-    /* Größe: 30vw */
-    width: 30vw;
-    height: 30vw;
-    max-width: 200px; 
-    max-height: 200px;
-    display: flex; 
-    justify-content: center;
-    align-items: center;
-    z-index: 0; 
+  svg {
+    width: 90%;
+    max-width: 900px; /* Zentriert und skaliert das SVG */
   }
 
-  .circle {
-    position: absolute; 
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    
-    /* KORRIGIERT: Nur Übergang für die Hintergrundfarbe, um das "Zucken" zu verhindern */
-    transition: background-color 0.05s ease-in-out; 
-    background-color: white; 
-  }
-  
-  /* TEXT (MINIMALISMUS & INVERTIERUNG) */
-  #greeting {
-    position: relative; 
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    font-size: 5vw; 
-    font-weight: normal;
-    text-transform: uppercase;
-    letter-spacing: -0.05em;
-    line-height: 1;
-    white-space: nowrap;
-    z-index: 1; 
-
-    /* INVERTIERUNGS-EFFEKT */
-    mix-blend-mode: difference;
-    color: white; 
-
-    /* ÜBERGANG FÜR DIE OPACITY */
-    opacity: 1;
-    transition: opacity 0.08s ease-in-out;
-  }
-
-  /* DEFINIERTE BEWEGUNG - ANGEWENDET AUF DEN WRAPPER */
-  @keyframes swipeUp {
-    0% { transform: translateY(0); opacity: 1; }
-    10% { transform: translateY(0); opacity: 1; } 
-    100% { transform: translateY(-150vh); opacity: 0; }
-  }
-
-  .swipe-wrapper.swipe {
-    animation: swipeUp 1.5s ease-in-out forwards;
+  .noise {
+    position:fixed;
+    top: 0;
+    left: 0;
+    pointer-events: none; /* Macht das Rauschen "durchsichtig" für Klicks */
   }
 </style>
 </head>
-<body>
 
-<div class="swipe-wrapper" id="swipeWrapper">
-  <div class="circle-container">
-    <div class="circle" id="circleElement"></div> 
-  </div>
-  <div id="greeting">Hallo</div> 
-</div>
+<body>
+<svg viewBox="0 0 999 240" opacity="0">
+  <filter id="wobble">
+    <feTurbulence type="fractalNoise" baseFrequency="0.01 0.011" numOctaves="3" result="noise" />
+    <feDisplacementMap in="SourceGraphic" in2="noise" scale="50" xChannelSelector="R" yChannelSelector="G" />
+  </filter>
+  
+  <filter id="glow" width="300%" height="300%" x="-100%" y="-100%">
+    <feGaussianBlur in="SourceAlpha" stdDeviation="13" result="blur" />
+    <feFlood flood-color="rgba(239, 68, 68, 0.75)" result="flood" />
+    <feComposite in="flood" in2="blur" operator="in" result="glowColor" />
+    <feMerge>
+      <feMergeNode in="glowColor" />
+      <feMergeNode in="glowColor" />
+      <feMergeNode in="SourceGraphic" />
+    </feMerge>
+  </filter>
+
+  <g filter="url(#wobble)">
+    <image 
+      id="logo"
+      href="C (1).png" 
+      x="250" 
+      y="20" 
+      width="500" 
+      height="200"
+      filter="url(#glow)" 
+    />
+  </g>
+</svg>
+
+<canvas class="noise"></canvas>
 
 <script>
-// --- JS-Funktionalität ---
+  const c = document.querySelector('canvas');
+  const ctx = c.getContext('2d');
+  const density = 0.017; // Dichte des statischen Rauschens (0-1)
 
-const WHITE = 'white';
-const BLACK = 'black';
+  // Funktion zur Erzeugung des statischen Rauschens auf dem Canvas
+  function noise() {
+    c.width = innerWidth;
+    c.height = innerHeight;
+    const w = c.width,
+          h = c.height,
+          iData = ctx.createImageData(w, h),
+          buffer32 = new Uint32Array(iData.data.buffer);
 
-const GREETINGS = [
-  "Hallo", "Hello", "Bonjour", "Hola", "你好 (Nǐ hǎo)",
-  "مرحبا (Marhaban)", "Привет (Privet)", "Olá", "नमस्ते (Namaste)",
-  "こんにちは (Konnichiwa)", "Merhaba", "안녕하세요 (Annyeonghaseyo)",
-  "Hallo"
-];
-
-let currentIndex = 0;
-const greetingElement = document.getElementById('greeting');
-const circleElement = document.getElementById('circleElement'); 
-const swipeWrapper = document.getElementById('swipeWrapper');
-
-const DURATION_TOTAL_MS = 2000;
-const DURATION_FINAL_WORD_MS = 200;
-const COUNT_WORDS = GREETINGS.length - 1;
-
-const firstRel = 0.6;
-const secondRel = 0.5;
-const lastRel = 0.1;
-
-let relativeTimes = [];
-relativeTimes.push(firstRel, secondRel);
-
-for (let i = 2; i < COUNT_WORDS; i++) {
-  const ratio = (i - 2) / (COUNT_WORDS - 3);
-  relativeTimes.push(secondRel * Math.pow(lastRel / secondRel, ratio));
-}
-
-const sumRel = relativeTimes.reduce((a, b) => a + b, 0);
-const durationsMs = relativeTimes.map(t => (t / sumRel) * DURATION_TOTAL_MS);
-durationsMs.push(DURATION_FINAL_WORD_MS);
-
-function showNextGreeting() {
-  // 1. FARBWECHSEL DES KREISES
-  const currentColor = circleElement.style.backgroundColor;
-  const isWhite = currentColor === WHITE || currentColor === ''; 
-  circleElement.style.backgroundColor = isWhite ? BLACK : WHITE;
-  
-  // 2. TEXT AUSBLENDEN
-  greetingElement.style.opacity = 0;
-
-  setTimeout(() => {
-    // 3. WORTWECHSEL
-    currentIndex = (currentIndex + 1) % GREETINGS.length;
-    greetingElement.textContent = GREETINGS[currentIndex]; 
+    for (let i = 0; i < buffer32.length; i++)
+      if (Math.random() > density) buffer32[i] = 0xffffffff;
     
-    // 4. TEXT EINBLENDEN
-    greetingElement.style.opacity = 1;
+    ctx.putImageData(iData, 0, 0);
+    ctx.globalCompositeOperation = 'xor'; // Sorgt für den "TV-Flacker"-Effekt
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, w, h);
+  }
 
-    const currentDuration = durationsMs[currentIndex];
+  // Initialisiere die Canvas-Größe und das Rauschen einmal
+  noise(); 
 
-    // Wenn das LETZTE WORT erreicht ist, wende die swipe-Animation auf den Wrapper an
-    if (currentIndex === GREETINGS.length - 1) {
-      setTimeout(() => {
-        swipeWrapper.classList.add('swipe'); 
-      }, currentDuration);
-    } else {
-      setTimeout(showNextGreeting, currentDuration);
-    }
-  }, 0); 
-}
+  // Zeige das SVG sanft an
+  gsap.to('svg', { duration: 1, opacity: 1, ease: 'power1.inOut' });
 
-// INITIIERUNG: Starte mit weißem Kreis
-circleElement.style.backgroundColor = WHITE;
-setTimeout(showNextGreeting, durationsMs[0]); 
+  // GSAP Timeline für die Wackel- und Glow-Animation
+  gsap.timeline({ defaults: { ease: 'none', repeat: -1, yoyo: true } })
+    // Führt die noise-Funktion regelmäßig aus (simuliert Flackern)
+    .to(window, { onRepeat: noise, duration: 0.33 }, 0) 
+    
+    // Wackel-Animation: Ändert die Frequenz des fraktalen Rauschens
+    .to('feTurbulence', {
+      attr: { 'baseFrequency': '0.011 0.013' },
+      duration: 4.5
+    }, 0)
+    
+    // Stärke des Wackeleffekts: Ändert die Verschiebung
+    .to('feDisplacementMap', {
+      attr: { scale: 25 },
+      duration: 1.33
+    }, 0)
+    
+    // Flackernder Glow-Effekt: Ändert die Unschärfe des Glows zufällig
+    .to('feGaussianBlur', {
+      duration: 2,
+      attr: { 'stdDeviation': () => 'random(5,9,1)' },
+      ease: 'sine.inOut',
+      repeatRefresh: true
+    }, 0);
 </script>
-
+</body>
+</html>
 </body>
 </html>
