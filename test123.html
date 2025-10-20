@@ -3,113 +3,109 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Logo Wobble Glow Animation - Größer</title>
+<title>Logo Chrome Reveal Animation</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.3/TweenMax.min.js"></script>
 
 <style>
-  body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    margin: 0;
-    background: #000;
-    font-family: sans-serif;
+  html,body {
+    background:#000;
+    overflow:hidden;
   }
 
-  svg {
-    width: 90%;
-    max-width: 900px; 
+  div, img {
+    position:absolute;
   }
 
-  .noise {
-    position:fixed;
-    top: 0;
-    left: 0;
-    pointer-events: none;
+  /* Haupt-Logo-Container (enthält alle Schichten) */
+  #logo {
+    opacity:0;
+    /* Angepasste Größe, um das Bild besser darzustellen */
+    width:300px; 
+    height:160px;
+    left:50%;
+    top:50%;
+    margin-left:-150px;
+    margin-top:-80px;
+  }
+
+  /* Stile für die Logo-Schichten */
+  #logoChrome, #logoDark {
+    /* Wichtig: Dein Logo wird als Hintergrundbild verwendet, um es besser zu skalieren */
+    width:100%;
+    height:100%;
+    background-image: url('C (1).png'); /* Dein Logo-Pfad */
+    background-size: contain; 
+    background-repeat: no-repeat;
+    background-position: center;
+    
+    /* Mix-Blend-Mode für visuelle Effekte */
+    mix-blend-mode: screen; 
+  }
+  
+  /* Das dunkle Basisbild (als Hintergrund für den Glanz) */
+  #logoDark {
+    mix-blend-mode: normal; /* Normal für die Basis */
+  }
+
+  /* Der Glanz- und Licht-Effekt */
+  .flare {
+    /* Blend-Mode muss auf 'screen' sein, um den Glanz zu erzeugen */
+    mix-blend-mode: screen;
+    /* Setze die Flare-Bilder auf eine feste Größe (werden von GSAP positioniert) */
+    width: 200px;
+    height: 200px;
   }
 </style>
 </head>
 
 <body>
-<svg viewBox="0 0 999 240" opacity="0">
-  <filter id="wobble">
-    <feTurbulence type="fractalNoise" baseFrequency="0.01 0.011" numOctaves="3" result="noise" />
-    <feDisplacementMap in="SourceGraphic" in2="noise" scale="50" xChannelSelector="R" yChannelSelector="G" />
-  </filter>
+<div id="logo">
+  <img class="flare" id="flare2" src="https://assets.codepen.io/721952/flare2.jpg"/>
   
-  <filter id="glow" width="300%" height="300%" x="-100%" y="-100%">
-    <feGaussianBlur in="SourceAlpha" stdDeviation="13" result="blur" />
-    <feFlood flood-color="rgba(239, 68, 68, 0.75)" result="flood" />
-    <feComposite in="flood" in2="blur" operator="in" result="glowColor" />
-    <feMerge>
-      <feMergeNode in="glowColor" />
-      <feMergeNode in="glowColor" />
-      <feMergeNode in="SourceGraphic" />
-    </feMerge>
-  </filter>
-
-  <g filter="url(#wobble)">
-    <image 
-      id="logo"
-      href="C (1).png" 
-      x="150" 
-      y="-20" 
-      width="700" 
-      height="280" 
-      filter="url(#glow)" 
-    />
-  </g>
-</svg>
-
-<canvas class="noise"></canvas>
+  <div id="logoChrome"></div> 
+  
+  <div id="logoDark"></div> 
+  
+  <img class="flare" id="flare1" src="https://assets.codepen.io/721952/flare1.png"/>
+</div>
 
 <script>
-  const c = document.querySelector('canvas');
-  const ctx = c.getContext('2d');
-  const density = 0.017;
+window.onload = function(){
 
-  function noise() {
-    c.width = innerWidth;
-    c.height = innerHeight;
-    const w = c.width,
-          h = c.height,
-          iData = ctx.createImageData(w, h),
-          buffer32 = new Uint32Array(iData.data.buffer);
-
-    for (let i = 0; i < buffer32.length; i++)
-      if (Math.random() > density) buffer32[i] = 0xffffffff;
+  // Die Animation verwendet TimelineMax (GSAP v2)
+  new TimelineMax({ repeat: -1, yoyo: true, repeatDelay: 1 }) 
+    .set('#logo',     {autoAlpha:1})
     
-    ctx.putImageData(iData, 0, 0);
-    ctx.globalCompositeOperation = 'xor';
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, w, h);
-  }
-
-  noise(); 
-
-  gsap.to('svg', { duration: 1, opacity: 1, ease: 'power1.inOut' });
-
-  gsap.timeline({ defaults: { ease: 'none', repeat: -1, yoyo: true } })
-    .to(window, { onRepeat: noise, duration: 0.33 }, 0) 
-    
-    .to('feTurbulence', {
-      attr: { 'baseFrequency': '0.011 0.013' },
-      duration: 4.5
+    // Setzt Flare 1 in den 3D-Raum
+    .set('#flare1',   {
+      transformOrigin:'110px 55px 2px', 
+      transformPerspective:200, 
+      left:70, top:45, 
+      alpha:0, scale:1.2, 
+      rotationX:-15, z:10
     }, 0)
     
-    .to('feDisplacementMap', {
-      attr: { scale: 25 },
-      duration: 1.33
-    }, 0)
+    // Animation der Flares und Logo-Schichten
+    .from('#flare2',      1.0, {x:-9, y:15, scale:0, ease:Power0.easeNone}, 0)
+    .to('#flare1',        2.0, {scale:0.5, rotationX:25, ease:Power1.easeIn}, 1)
+    .to('#flare1',        2.0, {x:4, y:2, ease:Power0.easeNone}, 0.9)
+    .to('#flare1',        1.0, {alpha:1, ease:Power1.easeInOut}, 0.9)
+    .to('#flare1',        0.8, {alpha:0, ease:Power3.easeIn}, 1.7)
     
-    .to('feGaussianBlur', {
-      duration: 2,
-      attr: { 'stdDeviation': () => 'random(5,9,1)' },
-      ease: 'sine.inOut',
-      repeatRefresh: true
-    }, 0);
+    // Chrome-Effekt
+    .from('#logoChrome',  1.5, {alpha:0, ease:Power3.easeInOut}, 0)
+    
+    // Dunkle Basis (mit subtiler 3D-Bewegung)
+    .fromTo('#logoDark',  4.0, {y:-1, alpha:1}, {y:3, alpha:0.8, ease:Power1.easeInOut}, 0)
+    .fromTo('#logoDark',  4.0, {x:-3}, {x:2, scaleX:0.9, ease:Power1.easeInOut}, 0)
+    .to('#logoDark',      2.0, {alpha:0.1, ease:Power1.easeInOut}, 2) 
+    
+    // Gesamtes Logo (subtile Skalierung/Rotation)
+    .from('#logo',        4.0, {scale:0.9, rotation:1}, 0) 
+    .to('#logo',          1.5, {alpha:0, ease:Power2.easeInOut}, 2.5)
+}
 </script>
+
 </body>
 </html>
