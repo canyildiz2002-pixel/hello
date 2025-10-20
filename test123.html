@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Logo Wobble Glow Animation</title>
+<title>Logo Wobble Glow Animation - Größer</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 
@@ -14,20 +14,20 @@
     justify-content: center;
     min-height: 100vh;
     margin: 0;
-    background: #000; /* Schwarzer Hintergrund */
+    background: #000;
     font-family: sans-serif;
   }
 
   svg {
     width: 90%;
-    max-width: 900px; /* Zentriert und skaliert das SVG */
+    max-width: 900px; 
   }
 
   .noise {
     position:fixed;
     top: 0;
     left: 0;
-    pointer-events: none; /* Macht das Rauschen "durchsichtig" für Klicks */
+    pointer-events: none;
   }
 </style>
 </head>
@@ -53,11 +53,11 @@
   <g filter="url(#wobble)">
     <image 
       id="logo"
-      href="C.png" 
-      x="250" 
-      y="20" 
-      width="500" 
-      height="200"
+      href="C (1).png" 
+      x="150" 
+      y="-20" 
+      width="700" 
+      height="280" 
       filter="url(#glow)" 
     />
   </g>
@@ -68,9 +68,8 @@
 <script>
   const c = document.querySelector('canvas');
   const ctx = c.getContext('2d');
-  const density = 0.017; // Dichte des statischen Rauschens (0-1)
+  const density = 0.017;
 
-  // Funktion zur Erzeugung des statischen Rauschens auf dem Canvas
   function noise() {
     c.width = innerWidth;
     c.height = innerHeight;
@@ -83,35 +82,28 @@
       if (Math.random() > density) buffer32[i] = 0xffffffff;
     
     ctx.putImageData(iData, 0, 0);
-    ctx.globalCompositeOperation = 'xor'; // Sorgt für den "TV-Flacker"-Effekt
+    ctx.globalCompositeOperation = 'xor';
     ctx.fillStyle = '#000';
     ctx.fillRect(0, 0, w, h);
   }
 
-  // Initialisiere die Canvas-Größe und das Rauschen einmal
   noise(); 
 
-  // Zeige das SVG sanft an
   gsap.to('svg', { duration: 1, opacity: 1, ease: 'power1.inOut' });
 
-  // GSAP Timeline für die Wackel- und Glow-Animation
   gsap.timeline({ defaults: { ease: 'none', repeat: -1, yoyo: true } })
-    // Führt die noise-Funktion regelmäßig aus (simuliert Flackern)
     .to(window, { onRepeat: noise, duration: 0.33 }, 0) 
     
-    // Wackel-Animation: Ändert die Frequenz des fraktalen Rauschens
     .to('feTurbulence', {
       attr: { 'baseFrequency': '0.011 0.013' },
       duration: 4.5
     }, 0)
     
-    // Stärke des Wackeleffekts: Ändert die Verschiebung
     .to('feDisplacementMap', {
       attr: { scale: 25 },
       duration: 1.33
     }, 0)
     
-    // Flackernder Glow-Effekt: Ändert die Unschärfe des Glows zufällig
     .to('feGaussianBlur', {
       duration: 2,
       attr: { 'stdDeviation': () => 'random(5,9,1)' },
@@ -119,7 +111,5 @@
       repeatRefresh: true
     }, 0);
 </script>
-</body>
-</html>
 </body>
 </html>
