@@ -1,9 +1,37 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Logo Chrome Reveal Animation</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/2.1.3/TweenMax.min.js"></script>
+<link rel="stylesheet" href="styles.css"> 
+
+<style>
+  /* Dein Logo wird als Hintergrundbild verwendet, um es besser zu skalieren */
+  #logoChrome, #logoDark {
+    width:100%;
+    height:100%;
+    background-image: url('C (1).png'); /* Dein Logo-Pfad */
+    background-size: contain; 
+    background-repeat: no-repeat;
+    background-position: center;
+    mix-blend-mode: screen; 
+  }
+  
+  #logoDark {
+    mix-blend-mode: normal;
+  }
+</style>
+</head>
+
+<body>
 <div id="logo">
   <img class="flare" id="flare2" src="https://assets.codepen.io/721952/flare2.jpg"/>
-  <img id="logoChrome" src="https://assets.codepen.io/721952/logoChrome.jpg"/>
-  <img id="logoDark" src="https://assets.codepen.io/721952/logoDark.png"/>
-  <img class="flare" id="flare1" src="https://assets.codepen.io/721952/flare1.png"/>
+  <div id="logoChrome"></div> <div id="logoDark"></div>   <img class="flare" id="flare1" src="https://assets.codepen.io/721952/flare1.png"/>
 </div>
 
+<script src="script.js"></script>
 </body>
 </html>
